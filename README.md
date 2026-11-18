@@ -5,8 +5,7 @@ A fast, glassy launcher and menu bar for Windows 11, inspired by Spotlight on ma
 - **Glint Search**: press a shortcut, type, hit Enter. Apps, files, maths, unit and currency conversions, and plain-English commands like *"turn off dark mode"* or *"open notepad and spotify"*.
 - **Skyline**: a menu bar along the top of your screen with the time, what's playing on Spotify (with a live waveform), network speed, volume, Wi-Fi, Bluetooth, battery and notifications.
 
-<!-- Screenshots: add your own here, e.g. docs/search.png and docs/skyline.png.
-     Take them on a clean desktop: check they don't show personal files, notifications or messages. -->
+![Glint Search open under the Skyline menu bar](docs/screenshots/hero.png)
 
 ## Download
 
@@ -40,9 +39,23 @@ Partial commands show suggestions as you type (`set` → *Set volume to …*). O
 **Tab** or **→** for more actions: Open with, Show in Explorer, Copy path, Run as administrator and so on.
 You can exclude folders from file search in Settings.
 
+| | |
+|---|---|
+| ![Maths: (12.5 + 7) * 3^2 = 175.5](docs/screenshots/search-math.png) | ![Currency: 100 USD to EUR](docs/screenshots/search-currency.png) |
+| ![Units: 72 °F in °C](docs/screenshots/search-units.png) | ![Command: turn off dark mode](docs/screenshots/search-command.png) |
+| ![Suggestions while typing "bright"](docs/screenshots/search-suggest.png) | ![More actions for Command Prompt](docs/screenshots/search-actions.png) |
+
 ## Skyline
 
 A menu bar docked to the top of your screen; maximised windows make room for it, just like the taskbar.
+
+![Skyline, left: the Glint button and what's playing on Spotify](docs/screenshots/skyline-left.png)
+
+![Skyline, right: network speed, volume, Bluetooth, Wi-Fi, battery, notifications, mascot and settings](docs/screenshots/skyline-right.png)
+
+| | |
+|---|---|
+| ![Now playing pop-up with playback controls](docs/screenshots/skyline-media.png) | ![Sound pop-up with a volume slider](docs/screenshots/skyline-volume.png) |
 
 - **Left:** a Glint button, and what's playing on Spotify: cover, song and a waveform that follows the real
   bass, mids and treble of the music, tinted with the album's colour. Click it for playback controls.
@@ -52,6 +65,8 @@ A menu bar docked to the top of your screen; maximised windows make room for it,
   mascot and Glint's settings.
 
 Choose its material (Blur, Acrylic, Mica or Solid) and what it shows in **Settings → Skyline**, or turn it off.
+
+![Glint Settings](docs/screenshots/settings.png)
 
 ## Claude mascot (optional)
 
