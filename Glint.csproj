@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- The Windows SDK version suffix gives access to WinRT APIs (used for the Wi-Fi / Bluetooth radios). -->
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <!-- Keep the build output where it has always been, so shortcuts and the startup entry stay valid. -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin\$(Configuration)\net9.0-windows\</OutputPath>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RootNamespace>Glint</RootNamespace>
+    <!-- Program.Main handles the quick Claude-hook mode before any UI loads. -->
+    <StartupObject>Glint.Program</StartupObject>
+    <AssemblyName>Glint</AssemblyName>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- Shown in Glint.exe's file details. -->
+    <Product>Glint</Product>
+    <Description>Glint, a launcher and menu bar for Windows</Description>
+    <Copyright>Copyright (c) 2026 The Glint Authors. MIT License.</Copyright>
+    <Company>The Glint Authors</Company>
+    <Version>1.0.0</Version>
+    <!-- WPF needs the DPI settings in app.manifest; the WinForms analyzer's advice doesn't apply here. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WinForms is only used for the tray icon and screen capture; keep its types out of the global namespace. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+</Project>
