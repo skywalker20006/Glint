@@ -197,27 +197,11 @@ public partial class App : Application
         return hotkeyOk;
     }
 
-    /// <summary>Draws the tray icon at runtime: a magnifier on a blue gradient disc.</summary>
+    /// <summary>Glint's icon (Assets/Glint.ico) at the size Windows uses for tray icons on this screen.</summary>
     static Drawing.Icon MakeIcon()
     {
-        using var bmp = new Drawing.Bitmap(32, 32);
-        using (var g = Drawing.Graphics.FromImage(bmp))
-        {
-            g.SmoothingMode = Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using var fill = new Drawing.Drawing2D.LinearGradientBrush(new Drawing.Rectangle(0, 0, 32, 32),
-                Drawing.Color.FromArgb(90, 170, 255), Drawing.Color.FromArgb(120, 90, 240), 45f);
-            g.FillEllipse(fill, 1, 1, 30, 30);
-            using var pen = new Drawing.Pen(Drawing.Color.White, 3f)
-            {
-                StartCap = Drawing.Drawing2D.LineCap.Round,
-                EndCap = Drawing.Drawing2D.LineCap.Round,
-            };
-            g.DrawEllipse(pen, 9, 8, 11, 11);
-            g.DrawLine(pen, 19, 18, 24, 23);
-        }
-        IntPtr hIcon = bmp.GetHicon();
-        try { return (Drawing.Icon)Drawing.Icon.FromHandle(hIcon).Clone(); }
-        finally { Native.DestroyIcon(hIcon); }
+        using var stream = GetResourceStream(new Uri("pack://application:,,,/Assets/Glint.ico")).Stream;
+        return new Drawing.Icon(stream, Forms.SystemInformation.SmallIconSize);
     }
 
     /// <summary>Shows or removes the top bar. It is an independent window; the launcher works either way.</summary>

@@ -13,6 +13,8 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Glint.exe's icon in Explorer and the taskbar. Made by tools/make_icon.py. -->
+    <ApplicationIcon>Assets\Glint.ico</ApplicationIcon>
     <RootNamespace>Glint</RootNamespace>
     <!-- Program.Main handles the quick Claude-hook mode before any UI loads. -->
     <StartupObject>Glint.Program</StartupObject>
@@ -27,6 +29,11 @@
     <!-- WPF needs the DPI settings in app.manifest; the WinForms analyzer's advice doesn't apply here. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The same icon for the Settings window and the tray. -->
+    <Resource Include="Assets\Glint.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- WinForms is only used for the tray icon and screen capture; keep its types out of the global namespace. -->
