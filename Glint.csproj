@@ -27,7 +27,7 @@
     <Description>Glint, a launcher and menu bar for Windows</Description>
     <Copyright>Copyright (c) 2026 The Glint Authors. MIT License.</Copyright>
     <Company>The Glint Authors</Company>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <!-- WPF needs the DPI settings in app.manifest; the WinForms analyzer's advice doesn't apply here. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>
