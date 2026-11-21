@@ -127,7 +127,7 @@ This makes a single self-contained `publish\Glint.exe` (about 170 MB, so it runs
 Zip it and attach the zip to a GitHub release (about 66 MB):
 
 ```powershell
-Compress-Archive publish\Glint.exe publish\Glint-1.0.1-win-x64.zip
+Compress-Archive publish\Glint.exe publish\Glint-1.1.0-win-x64.zip
 ```
 
 The exe is deliberately not compressed internally: compression makes it smaller but roughly triples Glint's
