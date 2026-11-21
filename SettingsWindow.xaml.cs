@@ -19,8 +19,13 @@ public partial class SettingsWindow : Window
         LoadExclusions();
         LoadAppearance();
         LoadSearchEnabled();
+        AutoUpdateBox.IsChecked = Settings.Data.AutoCheckUpdates;
+        ShowUpdateState();
+        Action onUpdate = () => Dispatcher.BeginInvoke(ShowUpdateState);
+        Updater.Changed += onUpdate;
         Closed += (_, _) =>
         {
+            Updater.Changed -= onUpdate;
             if (_recording) _main.RegisterHotkey();
             Settings.Save();
         };
@@ -305,6 +310,54 @@ public partial class SettingsWindow : Window
         LoadAppearance();
         ((App)Application.Current).RefreshTopBar();
         ShowStatus("Appearance reset to defaults.");
+    }
+
+    // ---------- version and updates ----------
+
+    void ShowUpdateState()
+    {
+        VersionText.Text = "Glint " + Updater.Short(Updater.Current);
+        var available = Updater.Available;
+        ViewReleaseButton.Visibility = available != null ? Visibility.Visible : Visibility.Collapsed;
+        CheckNowButton.IsEnabled = !Updater.Checking;
+
+        if (Updater.Checking) UpdateText.Text = "Checking for updates…";
+        else if (available != null) UpdateText.Text = $"Version {Updater.Short(available)} is available";
+        else if (Updater.Error != null) UpdateText.Text = Updater.Error;
+        else if (Settings.Data.LastUpdateCheck > DateTime.MinValue) UpdateText.Text = "You're up to date";
+        else UpdateText.Text = "";
+
+        // A green tick for "you're up to date", with when that was checked on hover.
+        bool upToDate = !Updater.Checking && available == null && Updater.Error == null && Settings.Data.LastUpdateCheck > DateTime.MinValue;
+        UpToDateTick.Visibility = upToDate ? Visibility.Visible : Visibility.Collapsed;
+        UpdateText.Margin = new Thickness(upToDate ? 6 : 10, 0, 12, 0);
+        UpdateText.ToolTip = upToDate ? "Checked " + Ago(Settings.Data.LastUpdateCheck) : null;
+
+        UpdateText.Foreground = available != null || upToDate
+            ? new SolidColorBrush(Color.FromRgb(140, 220, 160))
+            : (Brush)FindResource("Muted");
+    }
+
+    static string Ago(DateTime utc)
+    {
+        var age = DateTime.UtcNow - utc;
+        if (age < TimeSpan.FromMinutes(1)) return "just now";
+        if (age < TimeSpan.FromHours(1)) return $"{(int)age.TotalMinutes} min ago";
+        if (age < TimeSpan.FromDays(1)) return $"{(int)age.TotalHours} h ago";
+        return utc.ToLocalTime().ToString("d MMM");
+    }
+
+    void OnCheckNowClick(object sender, RoutedEventArgs e) => _ = Updater.CheckAsync();
+
+    void OnAutoUpdateClick(object sender, RoutedEventArgs e)
+    {
+        Settings.Data.AutoCheckUpdates = AutoUpdateBox.IsChecked == true;
+        Settings.Save();
+    }
+
+    void OnViewReleaseClick(object sender, RoutedEventArgs e)
+    {
+        if (Updater.AvailableUrl is { } url) SystemControl.OpenUri(url);
     }
 
     public void ShowStatus(string text, bool error = false)

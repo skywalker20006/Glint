@@ -57,6 +57,17 @@ public sealed class SettingsData
     /// <summary>Distance of the panel from the top of the screen, as a percentage of its height.</summary>
     public int TopPercent { get; set; } = 20;
 
+    // ----- updates -----
+    /// <summary>Look on GitHub for a newer release once a day.</summary>
+    public bool AutoCheckUpdates { get; set; } = true;
+    /// <summary>When GitHub was last asked (UTC).</summary>
+    public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue;
+    /// <summary>The newest release GitHub reported, e.g. "1.2.0", and its page.</summary>
+    public string LatestVersion { get; set; } = "";
+    public string LatestUrl { get; set; } = "";
+    /// <summary>The newer version the tray has already mentioned, so it's only mentioned once.</summary>
+    public string NotifiedVersion { get; set; } = "";
+
     /// <summary>Launch counts per app, used to rank frequently used apps higher.</summary>
     public Dictionary<string, int> Usage { get; set; } = new();
 }

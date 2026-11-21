@@ -11,6 +11,7 @@ public partial class App : Application
 
     Mutex? _mutex;
     Forms.NotifyIcon? _tray;
+    string? _updateUrl; // set while the "update available" notification is showing
     MainWindow? _main;
     SettingsWindow? _settings;
     readonly List<TopBar> _topBars = new(); // one per monitor (or just the main one, per Settings)
@@ -71,6 +72,13 @@ public partial class App : Application
 
         CreateTray();
         SetTopBar(Settings.Data.TopBarEnabled);
+        Updater.NewVersionFound += (version, url) => Dispatcher.BeginInvoke(() =>
+        {
+            _updateUrl = url;
+            _tray?.ShowBalloonTip(8000, $"Glint {Updater.Short(version)} is available",
+                "Click here to see what's new and download it.", Forms.ToolTipIcon.None);
+        });
+        Updater.Start();
         // Already opted in to the Claude mascot? Keep its hooks pointing at this Glint.exe (e.g. after a move).
         if (Settings.Data.BarShowClaude) Task.Run(ClaudeHooks.RepairIfOutOfDate);
 
@@ -152,6 +160,13 @@ public partial class App : Application
             ContextMenuStrip = menu,
             Visible = true,
         };
+        // A click on the "update available" notification opens the release page.
+        _tray.BalloonTipClicked += (_, _) =>
+        {
+            if (_updateUrl is { } url) SystemControl.OpenUri(url);
+            _updateUrl = null;
+        };
+        _tray.BalloonTipClosed += (_, _) => _updateUrl = null;
         _tray.MouseClick += (_, a) =>
         {
             if (a.Button != Forms.MouseButtons.Left) return;

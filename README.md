@@ -19,6 +19,10 @@ A fast, glassy launcher and menu bar for Windows 11, inspired by Spotlight on ma
 Glint lives in the system tray. Put Glint.exe wherever you like to keep it (for example `C:\Apps\Glint`),
 then turn on **Settings → Start Glint when I sign in** if you want it running all the time.
 
+Glint's version is shown at the bottom of Settings. Once a day it asks GitHub whether there's a newer release, and
+if there is, it tells you once from the tray and links to the release page. Nothing is downloaded or installed
+for you. Untick **Check automatically** in Settings to turn this off, or click **Check now** any time.
+
 **Requirements:** 64-bit Windows 11. Windows 10 version 2004 or later should work, but isn't tested.
 
 ## Glint Search
@@ -129,7 +133,7 @@ This makes a single self-contained `publish\Glint.exe` (about 170 MB, so it runs
 Zip it and attach the zip to a GitHub release (about 66 MB):
 
 ```powershell
-Compress-Archive publish\Glint.exe publish\Glint-1.1.0-win-x64.zip
+Compress-Archive publish\Glint.exe publish\Glint-1.1.1-win-x64.zip
 ```
 
 The exe is deliberately not compressed internally: compression makes it smaller but roughly triples Glint's

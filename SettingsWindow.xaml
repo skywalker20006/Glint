@@ -333,11 +333,30 @@
 
         <Grid Margin="4,14,0,0">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock x:Name="Status" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" Visibility="Collapsed"/>
-            <Button Grid.Column="1" Content="Remove Glint from this PC…" Style="{StaticResource Field}" Foreground="#FFFF9A8F"
+
+            <!-- version and updates -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="VersionText" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock x:Name="UpToDateTick" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontSize="13" Foreground="#FF8CDCA0" VerticalAlignment="Center" Margin="12,1,0,0"
+                           Visibility="Collapsed"/>
+                <TextBlock x:Name="UpdateText" Foreground="{StaticResource Muted}" FontSize="12.5"
+                           VerticalAlignment="Center" Margin="10,0,12,0"/>
+                <Button x:Name="ViewReleaseButton" Content="View release" Style="{StaticResource Field}"
+                        Click="OnViewReleaseClick" Visibility="Collapsed" Margin="0,0,8,0"
+                        ToolTip="Opens the new release's page on GitHub"/>
+                <Button x:Name="CheckNowButton" Content="Check now" Style="{StaticResource Field}" Click="OnCheckNowClick"/>
+                <CheckBox x:Name="AutoUpdateBox" Content="Check automatically" Margin="14,0,0,0" VerticalAlignment="Center"
+                          Click="OnAutoUpdateClick"
+                          ToolTip="Once a day, Glint asks GitHub whether there's a newer release. Nothing is downloaded or installed."/>
+            </StackPanel>
+
+            <TextBlock x:Name="Status" Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center" Margin="16,0,16,0" Visibility="Collapsed"/>
+            <Button Grid.Column="2" Content="Remove Glint from this PC…" Style="{StaticResource Field}" Foreground="#FFFF9A8F"
                     Click="OnRemoveGlintClick"
                     ToolTip="Turns off start-at-sign-in, removes Glint's Claude Code hooks and deletes Glint's settings, then quits."/>
         </Grid>
