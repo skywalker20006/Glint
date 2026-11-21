@@ -79,7 +79,12 @@ public partial class App : Application
             while (true)
             {
                 showSignal.WaitOne();
-                Dispatcher.BeginInvoke(() => _main.ShowLauncher());
+                Dispatcher.BeginInvoke(() =>
+                {
+                    // Opening Glint again with the search switched off brings up Settings instead.
+                    if (Settings.Data.LauncherEnabled) _main.ShowLauncher();
+                    else OpenSettings();
+                });
             }
         })
         { IsBackground = true, Name = "Glint.ShowSignal" }.Start();
@@ -95,7 +100,8 @@ public partial class App : Application
         }
         else if (!e.Args.Contains("--background"))
         {
-            _main.ShowLauncher(initialQuery);
+            if (Settings.Data.LauncherEnabled) _main.ShowLauncher(initialQuery);
+            else if (!Settings.Data.TopBarEnabled) OpenSettings(); // otherwise nothing would show that Glint started
         }
     }
 
@@ -116,8 +122,12 @@ public partial class App : Application
     void CreateTray()
     {
         var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Open Glint", null, (_, _) => _main!.ShowLauncher());
+        var open = new Forms.ToolStripMenuItem("Open Glint", null, (_, _) => _main!.ShowLauncher());
+        menu.Items.Add(open);
         menu.Items.Add("Settings…", null, (_, _) => OpenSettings());
+        var search = new Forms.ToolStripMenuItem("Glint Search") { CheckOnClick = true, Checked = Settings.Data.LauncherEnabled };
+        search.Click += (_, _) => SetLauncher(search.Checked);
+        menu.Items.Add(search);
         var skyline = new Forms.ToolStripMenuItem("Skyline") { CheckOnClick = true, Checked = Settings.Data.TopBarEnabled };
         skyline.Click += (_, _) =>
         {
@@ -125,7 +135,12 @@ public partial class App : Application
             Settings.Save();
             SetTopBar(skyline.Checked);
         };
-        menu.Opening += (_, _) => skyline.Checked = Settings.Data.TopBarEnabled;
+        menu.Opening += (_, _) =>
+        {
+            skyline.Checked = Settings.Data.TopBarEnabled;
+            search.Checked = Settings.Data.LauncherEnabled;
+            open.Visible = Settings.Data.LauncherEnabled;
+        };
         menu.Items.Add(skyline);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Quit", null, (_, _) => Quit());
@@ -133,13 +148,15 @@ public partial class App : Application
         _tray = new Forms.NotifyIcon
         {
             Icon = MakeIcon(),
-            Text = $"Glint ({HotkeyText()})",
+            Text = TrayText(),
             ContextMenuStrip = menu,
             Visible = true,
         };
         _tray.MouseClick += (_, a) =>
         {
-            if (a.Button == Forms.MouseButtons.Left) _main!.ShowLauncher();
+            if (a.Button != Forms.MouseButtons.Left) return;
+            if (Settings.Data.LauncherEnabled) _main!.ShowLauncher();
+            else OpenSettings();
         };
     }
 
@@ -159,7 +176,25 @@ public partial class App : Application
 
     public void UpdateTrayText()
     {
-        if (_tray != null) _tray.Text = $"Glint ({HotkeyText()})";
+        if (_tray != null) _tray.Text = TrayText();
+    }
+
+    static string TrayText() => Settings.Data.LauncherEnabled ? $"Glint ({HotkeyText()})" : "Glint";
+
+    /// <summary>
+    /// Switches the search launcher on or off; Skyline is left as it is. Returns false if it was switched on
+    /// but its shortcut is taken by another app (the launcher is still on, reachable from the tray and Skyline).
+    /// </summary>
+    public bool SetLauncher(bool enabled)
+    {
+        Settings.Data.LauncherEnabled = enabled;
+        Settings.Save();
+        if (!enabled) _main!.HideLauncher();
+        bool hotkeyOk = _main!.RegisterHotkey(); // registers, or releases the shortcut when off
+        UpdateTrayText();
+        RefreshTopBar();
+        _settings?.LoadSearchEnabled();
+        return hotkeyOk;
     }
 
     /// <summary>Draws the tray icon at runtime: a magnifier on a blue gradient disc.</summary>

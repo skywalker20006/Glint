@@ -108,10 +108,15 @@
             <!-- ============ Search: general ============ -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Text="Glint Search" Style="{StaticResource CardTitle}"/>
-                    <TextBlock Text="The launcher for apps, files, maths, conversions and commands."
+                    <Grid>
+                        <TextBlock Text="Glint Search" Style="{StaticResource CardTitle}"/>
+                        <CheckBox x:Name="SearchBox" Content="On" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                  Margin="0" Click="OnSearchClick"/>
+                    </Grid>
+                    <TextBlock Text="The launcher for apps, files, maths, conversions and commands. Turn it off to keep just Skyline."
                                Style="{StaticResource CardIntro}"/>
 
+                    <StackPanel x:Name="SearchOptions">
                     <TextBlock Text="Shortcut" Style="{StaticResource Label}"/>
                     <Button x:Name="HotkeyButton" Style="{StaticResource Field}" Click="OnHotkeyClick"
                             HorizontalAlignment="Stretch" FontSize="15" FontWeight="SemiBold"/>
@@ -177,6 +182,7 @@
                     </Border>
                     <Button Content="Add folder…" Style="{StaticResource Field}" Click="OnAddExclusion"
                             HorizontalAlignment="Left" Margin="0,8,0,0" Padding="0"/>
+                    </StackPanel>
 
                     <CheckBox x:Name="StartupBox" Content="Start Glint when I sign in" Margin="0,20,0,0"
                               Click="OnStartupClick"/>
@@ -185,7 +191,7 @@
 
             <!-- ============ Search: appearance ============ -->
             <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel>
+                <StackPanel x:Name="SearchAppearance">
                     <TextBlock Text="Search appearance" Style="{StaticResource CardTitle}"/>
                     <TextBlock Text="Applies the next time the launcher opens. Preview shows it now."
                                Style="{StaticResource CardIntro}"/>

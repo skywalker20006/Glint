@@ -66,6 +66,7 @@ public partial class MainWindow : Window
     public bool RegisterHotkey()
     {
         Native.UnregisterHotKey(_hwnd, HotkeyId);
+        if (!Settings.Data.LauncherEnabled) return true; // nothing to register: the search is switched off
         if (!Enum.TryParse<ModifierKeys>(Settings.Data.HotkeyModifiers, out var mods) ||
             !Enum.TryParse<Key>(Settings.Data.HotkeyKey, out var key))
             return false;
@@ -97,6 +98,7 @@ public partial class MainWindow : Window
     public void ShowLauncher(string initialQuery = "")
     {
         var s = Settings.Data;
+        if (!s.LauncherEnabled) return;
         double panelW = Math.Clamp(s.PanelWidth, 520, 960);
         double winW = panelW + 2 * MarginX;
 

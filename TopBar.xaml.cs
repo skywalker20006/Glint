@@ -242,6 +242,7 @@ public partial class TopBar : Window
 
         UpdateNowPlaying();
         if (ClaudeSpark.Data != null) UpdateClaudeVisibility();
+        GlintButton.Visibility = s.LauncherEnabled ? Visibility.Visible : Visibility.Collapsed;
         SpeedPanel.Visibility = s.BarShowSpeed ? Visibility.Visible : Visibility.Collapsed;
         VolumeButton.Visibility = s.BarShowVolume ? Visibility.Visible : Visibility.Collapsed;
         WifiPanel.Visibility = s.BarShowWifi ? Visibility.Visible : Visibility.Collapsed;

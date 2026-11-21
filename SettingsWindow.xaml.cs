@@ -18,6 +18,7 @@ public partial class SettingsWindow : Window
         StartupBox.IsChecked = Settings.LaunchAtStartup;
         LoadExclusions();
         LoadAppearance();
+        LoadSearchEnabled();
         Closed += (_, _) =>
         {
             if (_recording) _main.RegisterHotkey();
@@ -150,6 +151,34 @@ public partial class SettingsWindow : Window
         ShowClaude.IsChecked = s.BarShowClaude;
         SkylineOptions.IsEnabled = s.TopBarEnabled;
         SkylineOptions.Opacity = s.TopBarEnabled ? 1 : 0.45;
+    }
+
+    /// <summary>Reflects whether the search launcher is on: the switch, and greys out its options when it is off.</summary>
+    public void LoadSearchEnabled()
+    {
+        bool on = Settings.Data.LauncherEnabled;
+        SearchBox.IsChecked = on;
+        foreach (var panel in new FrameworkElement[] { SearchOptions, SearchAppearance })
+        {
+            panel.IsEnabled = on;
+            panel.Opacity = on ? 1 : 0.45;
+        }
+        HotkeyButton.Content = App.HotkeyText();
+    }
+
+    void OnSearchClick(object sender, RoutedEventArgs e)
+    {
+        bool on = SearchBox.IsChecked == true;
+        if (_recording) StopRecording();
+        bool hotkeyOk = ((App)Application.Current).SetLauncher(on);
+        if (!on)
+            ShowStatus(Settings.Data.TopBarEnabled
+                ? $"Glint Search is off. {App.HotkeyText()} is free for other apps; Skyline keeps running."
+                : "Glint Search and Skyline are both off. Glint stays in the tray, where you can turn either back on.");
+        else if (hotkeyOk)
+            ShowStatus($"Glint Search is on. Press {App.HotkeyText()} to open it.");
+        else
+            ShowStatus($"Glint Search is on, but {App.HotkeyText()} is taken by another app. Pick a different shortcut.", error: true);
     }
 
     void OnTopBarClick(object sender, RoutedEventArgs e)

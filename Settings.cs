@@ -11,6 +11,11 @@ public sealed class SettingsData
     public string HotkeyModifiers { get; set; } = "Control, Alt";
     /// <summary>System.Windows.Input.Key name, e.g. "Space".</summary>
     public string HotkeyKey { get; set; } = "Space";
+    /// <summary>
+    /// The search launcher. Off leaves Skyline running on its own: the shortcut is released for other apps,
+    /// and the tray icon and Skyline stop offering to open the search.
+    /// </summary>
+    public bool LauncherEnabled { get; set; } = true;
     /// <summary>ISO code used when a currency query has no target. Empty = from Windows region.</summary>
     public string HomeCurrency { get; set; } = "";
     /// <summary>Folders whose contents never appear in file search results (subfolders included).</summary>

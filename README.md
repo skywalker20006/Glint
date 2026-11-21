@@ -39,6 +39,9 @@ Partial commands show suggestions as you type (`set` → *Set volume to …*). O
 **Tab** or **→** for more actions: Open with, Show in Explorer, Copy path, Run as administrator and so on.
 You can exclude folders from file search in Settings.
 
+Only want the menu bar? Turn off **Settings → Glint Search** (or untick it in the tray menu). Skyline keeps
+running, and the shortcut is freed up for other apps.
+
 | | |
 |---|---|
 | ![Maths: (12.5 + 7) * 3^2 = 175.5](docs/screenshots/search-math.png) | ![Currency: 100 USD to EUR](docs/screenshots/search-currency.png) |
