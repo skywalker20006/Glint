@@ -1,3 +1,5 @@
+<img src="Assets/Glint-256.png" width="96" alt="Glint's icon: a magnifying glass over a page on cherry-red acrylic">
+
 # Glint
 
 A fast, glassy launcher and menu bar for Windows 11, inspired by Spotlight on macOS.
