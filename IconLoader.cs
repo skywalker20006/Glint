@@ -35,7 +35,8 @@ internal static class IconLoader
             if (!Cache.TryGetValue(key, out var img))
             {
                 if (Cache.Count > 3000) Cache.Clear();
-                try { img = LoadIcon(key, item.IconIsFile); } catch { img = null; }
+                try { img = key.StartsWith("emoji:") ? EmojiImages.Render(key[6..]) : LoadIcon(key, item.IconIsFile); }
+                catch { img = null; }
                 Cache[key] = img;
             }
             item.Icon = img;

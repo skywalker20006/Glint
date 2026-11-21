@@ -30,6 +30,8 @@ public sealed class SettingsData
     public string GlassMode { get; set; } = "Live";
     // ----- Skyline (the menu bar docked to the top of the screen) -----
     public bool TopBarEnabled { get; set; } = true;
+    /// <summary>A bar on every monitor; off puts it on the main monitor only.</summary>
+    public bool BarAllMonitors { get; set; } = true;
     /// <summary>"Blur" (clear live blur), "Acrylic" (tinted live blur with grain), "Mica" (tinted wallpaper), or "Solid".</summary>
     public string BarMaterial { get; set; } = "Blur";
     /// <summary>Spotify's current song, album art and a live waveform on the left of Skyline.</summary>

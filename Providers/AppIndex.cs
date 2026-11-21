@@ -131,6 +131,7 @@ internal static class AppIndex
             Title = a.Name,
             Kind = "Application",
             IconKey = parsing,
+            ProgramPath = target,
             Action = open,
             // Store apps have no .exe to elevate or reveal, so they get no extra actions.
             GetActions = target == null ? null : () => new List<ResultItem>

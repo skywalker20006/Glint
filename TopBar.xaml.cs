@@ -12,7 +12,7 @@ using Forms = System.Windows.Forms;
 namespace Glint;
 
 /// <summary>
-/// A macOS-style bar docked to the top of the primary screen. It registers as a Windows "app bar",
+/// A macOS-style bar docked to the top of one screen (one bar per monitor). It registers as a Windows "app bar",
 /// so maximised windows stop below it instead of covering it, the same way they stop above the taskbar.
 /// </summary>
 public partial class TopBar : Window
@@ -32,10 +32,14 @@ public partial class TopBar : Window
     GlassBackdrop? _glass;
     Native.RECT _rect;
 
-    public TopBar(Action toggleLauncher)
+    /// <summary>The monitor this bar sits on, as Windows names it (e.g. DISPLAY2).</summary>
+    public string DeviceName { get; }
+
+    public TopBar(Action toggleLauncher, string deviceName)
     {
         InitializeComponent();
         _toggleLauncher = toggleLauncher;
+        DeviceName = deviceName;
 
         _clockTimer.Tick += (_, _) => UpdateClock();
         _statusTimer.Tick += (_, _) => { UpdateStatus(); KeepGlassUnderBar(); };
@@ -72,10 +76,14 @@ public partial class TopBar : Window
 
     // ---------- docking ----------
 
-    /// <summary>Claims a strip at the top of the primary monitor and moves the bar into it.</summary>
+    /// <summary>This bar's monitor; the primary one if it has just been unplugged (the bar is closed soon after).</summary>
+    Forms.Screen MyScreen() =>
+        Forms.Screen.AllScreens.FirstOrDefault(s => s.DeviceName == DeviceName) ?? Forms.Screen.PrimaryScreen!;
+
+    /// <summary>Claims a strip at the top of this bar's monitor and moves the bar into it.</summary>
     void Dock()
     {
-        var screen = Forms.Screen.PrimaryScreen!.Bounds;
+        var screen = MyScreen().Bounds;
         double scale = DpiScale();
         int height = (int)Math.Round(BarHeight * scale);
 
@@ -98,7 +106,7 @@ public partial class TopBar : Window
 
     double DpiScale()
     {
-        var screen = Forms.Screen.PrimaryScreen!.Bounds;
+        var screen = MyScreen().Bounds;
         IntPtr monitor = Native.MonitorFromPoint(new Native.POINT { X = screen.Left + 1, Y = screen.Top + 1 }, 2);
         return Native.GetDpiForMonitor(monitor, 0, out uint dpi, out _) == 0 ? dpi / 96.0 : 1.0;
     }
@@ -261,7 +269,7 @@ public partial class TopBar : Window
     /// <summary>Builds the Mica image from the current wallpaper; cached until the wallpaper or screen changes.</summary>
     bool UpdateMica()
     {
-        var screen = Forms.Screen.PrimaryScreen!.Bounds;
+        var screen = MyScreen().Bounds;
         string key = $"{screen.Width}x{screen.Height}|{WallpaperStamp()}";
         if (key == _micaKey && MicaLayer.Fill != null) return true;
 

@@ -16,6 +16,7 @@
         <SolidColorBrush x:Key="FlyTrack" Color="#40FFFFFF"/>
         <SolidColorBrush x:Key="FlyFill" Color="#F2FFFFFF"/>
         <SolidColorBrush x:Key="FlyHover" Color="#24FFFFFF"/>
+        <SolidColorBrush x:Key="FlyLine" Color="#1FFFFFFF"/>
 
         <!-- Slider in the macOS Control Centre style: a thin rounded track, a filled part and a round knob. -->
         <Style x:Key="TrackFill" TargetType="RepeatButton">
@@ -119,6 +120,13 @@
                 <TextBlock x:Name="PercentText" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"
                            FontWeight="SemiBold" Typography.NumeralAlignment="Tabular" Foreground="{DynamicResource FlyText}"/>
             </Grid>
+
+            <!-- per-app volume, filled in by VolumeFlyout.Refresh -->
+            <StackPanel x:Name="AppsSection" Visibility="Collapsed">
+                <Border Height="1" Background="{DynamicResource FlyLine}" Margin="0,12,0,9"/>
+                <TextBlock Text="Apps" FontWeight="SemiBold" Foreground="{DynamicResource FlyText}"/>
+                <StackPanel x:Name="AppsPanel" Margin="0,2,0,0"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </local:BarFlyout>

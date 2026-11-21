@@ -13,7 +13,7 @@ public partial class App : Application
     Forms.NotifyIcon? _tray;
     MainWindow? _main;
     SettingsWindow? _settings;
-    TopBar? _topBar;
+    readonly List<TopBar> _topBars = new(); // one per monitor (or just the main one, per Settings)
 
     /// <summary>Releases the top bar's reserved screen strip if Windows ends the session while Glint is running.</summary>
     protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
@@ -204,22 +204,58 @@ public partial class App : Application
         return new Drawing.Icon(stream, Forms.SystemInformation.SmallIconSize);
     }
 
-    /// <summary>Shows or removes the top bar. It is an independent window; the launcher works either way.</summary>
+    /// <summary>Shows or removes Skyline. The bars are independent windows; the launcher works either way.</summary>
     public void SetTopBar(bool enabled)
     {
-        if (enabled && _topBar == null)
+        if (enabled)
         {
-            _topBar = new TopBar(() => _main!.ToggleLauncher());
-            _topBar.Show();
+            if (!_watchingDisplays)
+            {
+                // Monitors plugged in or out: give each one a bar, or take its bar away.
+                Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaysChanged;
+                _watchingDisplays = true;
+            }
+            SyncTopBars();
+            return;
         }
-        else if (!enabled && _topBar != null)
+        if (_watchingDisplays)
         {
-            _topBar.Close(); // gives the reserved strip at the top of the screen back to Windows
-            _topBar = null;
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaysChanged;
+            _watchingDisplays = false;
+        }
+        foreach (var bar in _topBars) bar.Close(); // gives each reserved strip back to Windows
+        _topBars.Clear();
+    }
+
+    bool _watchingDisplays;
+
+    void OnDisplaysChanged(object? sender, EventArgs e) => Dispatcher.BeginInvoke(() =>
+    {
+        if (Settings.Data.TopBarEnabled && !Quitting) SyncTopBars();
+    });
+
+    /// <summary>Makes the bars match the monitors: one on each, or only on the main one.</summary>
+    public void SyncTopBars()
+    {
+        var wanted = (Settings.Data.BarAllMonitors ? Forms.Screen.AllScreens : new[] { Forms.Screen.PrimaryScreen! })
+            .Select(s => s.DeviceName).ToHashSet();
+        foreach (var bar in _topBars.Where(b => !wanted.Contains(b.DeviceName)).ToList())
+        {
+            bar.Close();
+            _topBars.Remove(bar);
+        }
+        foreach (string device in wanted.Where(d => _topBars.All(b => b.DeviceName != d)))
+        {
+            var bar = new TopBar(() => _main!.ToggleLauncher(), device);
+            _topBars.Add(bar);
+            bar.Show();
         }
     }
 
-    public void RefreshTopBar() => _topBar?.ApplyTheme();
+    public void RefreshTopBar()
+    {
+        foreach (var bar in _topBars) bar.ApplyTheme();
+    }
 
     public void OpenSettings()
     {

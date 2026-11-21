@@ -211,6 +211,8 @@ internal static class Commands
 
     static readonly Hint[] Hints =
     {
+        new("files ", "Search only files …", "files budget   (or “> budget”)", ""),
+        new("emoji ", "Search emoji …", "emoji party   (or “:party”)", ""),
         new("set volume to ", "Set volume to …", "set volume to 50", ""),
         new("set brightness to ", "Set brightness to …", "set brightness to 60", ""),
         new("set a timer for ", "Set a timer for …", "set a timer for 10 minutes", ""),

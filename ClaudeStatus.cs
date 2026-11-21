@@ -20,7 +20,9 @@ internal sealed class ClaudeStatus : IDisposable
 
     readonly FileSystemWatcher? _watcher;
     readonly System.Threading.Timer _debounce, _clock, _calm;
-    DateTime _acknowledged = DateTime.MinValue;
+    // Shared by every Skyline bar: seeing "ready" on one monitor calms the mascot on all of them.
+    static DateTime _acknowledged = DateTime.MinValue;
+    static event Action? Acknowledged;
 
     public State Current { get; private set; } = State.Idle;
 
@@ -34,6 +36,7 @@ internal sealed class ClaudeStatus : IDisposable
         _calm = new System.Threading.Timer(_ => Evaluate());
         // Time alone can change the state (a ready calming down), so look again now and then.
         _clock = new System.Threading.Timer(_ => Evaluate(), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        Acknowledged += Evaluate;
         try
         {
             Directory.CreateDirectory(Folder);
@@ -56,7 +59,7 @@ internal sealed class ClaudeStatus : IDisposable
     public void Acknowledge()
     {
         _acknowledged = DateTime.UtcNow;
-        Evaluate();
+        Acknowledged?.Invoke();
     }
 
     void Evaluate()
@@ -94,6 +97,7 @@ internal sealed class ClaudeStatus : IDisposable
 
     public void Dispose()
     {
+        Acknowledged -= Evaluate;
         _watcher?.Dispose();
         _debounce.Dispose();
         _clock.Dispose();

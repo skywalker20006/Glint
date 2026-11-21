@@ -58,6 +58,7 @@ public abstract class BarFlyout : Window
             _glass = TransparencyOn() ? GlassBackdrop.TryCreate() : null;
         }
 
+        Refresh(); // first: a panel may change its height to fit what it shows
         var monitor = Native.MonitorFromPoint(new Native.POINT { X = centerX, Y = top }, 2);
         _scale = Native.GetDpiForMonitor(monitor, 0, out uint dpi, out _) == 0 ? dpi / 96.0 : 1.0;
         int w = (int)Math.Round(Width * _scale), h = (int)Math.Round(Height * _scale);
@@ -65,7 +66,6 @@ public abstract class BarFlyout : Window
         _x = Math.Min(centerX - w / 2, screenRight - w + margin - (int)(6 * _scale));
         _y = top - margin;
 
-        Refresh();
         Native.SetWindowPos(_hwnd, Native.HWND_TOPMOST, _x, _y, w, h, Native.SWP_NOACTIVATE);
         Show();
         Native.SetWindowPos(_hwnd, Native.HWND_TOPMOST, _x, _y, w, h, Native.SWP_NOACTIVATE);

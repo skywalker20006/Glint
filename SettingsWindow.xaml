@@ -321,6 +321,9 @@
                                           ToolTip="Spins while Claude is working and pulses orange when Claude is ready for you."/>
                             </StackPanel>
                         </Grid>
+                        <CheckBox x:Name="AllMonitorsBox" Content="Show on every monitor" Margin="0,12,0,0"
+                                  Click="OnAllMonitorsClick"
+                                  ToolTip="Off puts Skyline on your main monitor only."/>
                         <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"
                                    Text="Skyline uses the same light / dark theme as Glint Search."/>
                     </StackPanel>

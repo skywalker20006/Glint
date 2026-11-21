@@ -9,6 +9,8 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>bin\$(Configuration)\net9.0-windows\</OutputPath>
     <Nullable>enable</Nullable>
+    <!-- EmojiImages.cs calls Direct2D through COM vtables. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
@@ -33,6 +35,8 @@
   <ItemGroup>
     <!-- The same icon for the Settings window and the tray. -->
     <Resource Include="Assets\Glint.ico" />
+    <!-- Emoji names for emoji search. Made by tools/make_emoji_list.py. -->
+    <Resource Include="Assets\emoji.txt" />
   </ItemGroup>
 
   <ItemGroup>

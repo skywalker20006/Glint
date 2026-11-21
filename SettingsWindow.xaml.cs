@@ -149,6 +149,7 @@ public partial class SettingsWindow : Window
         ShowBattery.IsChecked = s.BarShowBattery;
         ShowNotifications.IsChecked = s.BarShowNotifications;
         ShowClaude.IsChecked = s.BarShowClaude;
+        AllMonitorsBox.IsChecked = s.BarAllMonitors;
         SkylineOptions.IsEnabled = s.TopBarEnabled;
         SkylineOptions.Opacity = s.TopBarEnabled ? 1 : 0.45;
     }
@@ -179,6 +180,13 @@ public partial class SettingsWindow : Window
             ShowStatus($"Glint Search is on. Press {App.HotkeyText()} to open it.");
         else
             ShowStatus($"Glint Search is on, but {App.HotkeyText()} is taken by another app. Pick a different shortcut.", error: true);
+    }
+
+    void OnAllMonitorsClick(object sender, RoutedEventArgs e)
+    {
+        Settings.Data.BarAllMonitors = AllMonitorsBox.IsChecked == true;
+        Settings.Save();
+        if (Settings.Data.TopBarEnabled) ((App)Application.Current).SyncTopBars();
     }
 
     void OnTopBarClick(object sender, RoutedEventArgs e)

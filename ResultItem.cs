@@ -18,6 +18,8 @@ public sealed class ResultItem : INotifyPropertyChanged
 
     /// <summary>Shell parsing name to load an icon from (file path or shell:AppsFolder item).</summary>
     public string? IconKey { get; init; }
+    /// <summary>The program behind an app or window result, when known. Lets an open window be matched to its app.</summary>
+    public string? ProgramPath { get; init; }
     public bool IconIsFile { get; init; }
 
     public Action? Action { get; init; }

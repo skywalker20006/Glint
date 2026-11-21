@@ -259,6 +259,170 @@ internal static class SystemControl
         [PreserveSig] int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
     }
 
+    // ---------- per-app volume (audio sessions) ----------
+
+    /// <summary>One app's own volume, as in Windows' volume mixer. An app can have several sessions; they move together.</summary>
+    public sealed class AppVolume
+    {
+        readonly List<ISimpleAudioVolume> _controls;
+
+        internal AppVolume(string name, string? exePath, bool isSystem, bool active, ISimpleAudioVolume control)
+        {
+            Name = name;
+            ExePath = exePath;
+            IsSystem = isSystem;
+            Active = active;
+            _controls = new() { control };
+        }
+
+        public string Name { get; }
+        public string? ExePath { get; }
+        /// <summary>Windows' own sounds (notifications, errors).</summary>
+        public bool IsSystem { get; }
+        /// <summary>Playing sound right now, rather than just open.</summary>
+        public bool Active { get; internal set; }
+
+        internal void Add(ISimpleAudioVolume control) => _controls.Add(control);
+
+        public int Volume
+        {
+            get
+            {
+                try { return _controls[0].GetMasterVolume(out float v) == 0 ? (int)Math.Round(v * 100) : 0; }
+                catch { return 0; }
+            }
+        }
+
+        public bool Muted
+        {
+            get
+            {
+                try { return _controls[0].GetMute(out bool m) == 0 && m; }
+                catch { return false; }
+            }
+        }
+
+        public void SetVolume(int percent)
+        {
+            Guid ctx = Guid.Empty;
+            foreach (var c in _controls)
+            {
+                try
+                {
+                    c.SetMasterVolume(Math.Clamp(percent, 0, 100) / 100f, ref ctx);
+                    if (percent > 0) c.SetMute(false, ref ctx);
+                }
+                catch { /* the app closed */ }
+            }
+        }
+
+        public void SetMute(bool mute)
+        {
+            Guid ctx = Guid.Empty;
+            foreach (var c in _controls)
+            {
+                try { c.SetMute(mute, ref ctx); } catch { }
+            }
+        }
+    }
+
+    /// <summary>Apps with sound open on the default output, those playing first. Empty if Windows can't say.</summary>
+    public static List<AppVolume> AppVolumes()
+    {
+        var byApp = new Dictionary<string, AppVolume>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var device = DefaultDevice();
+            if (device == null) return new();
+            Guid iid = typeof(IAudioSessionManager2).GUID;
+            if (device.Activate(ref iid, 23, IntPtr.Zero, out object o) != 0 || o is not IAudioSessionManager2 manager) return new();
+            if (manager.GetSessionEnumerator(out var sessions) != 0 || sessions == null) return new();
+            sessions.GetCount(out int count);
+            int self = Environment.ProcessId;
+            for (int i = 0; i < count; i++)
+            {
+                if (sessions.GetSession(i, out var session) != 0 || session is not IAudioSessionControl2 control) continue;
+                if (control.GetState(out int state) != 0 || state == 2 /* expired */) continue;
+                if (session is not ISimpleAudioVolume volume) continue;
+
+                bool isSystem = control.IsSystemSoundsSession() == 0;
+                control.GetProcessId(out int pid);
+                if (!isSystem && (pid == 0 || pid == self)) continue;
+
+                string name, key;
+                string? path = null;
+                if (isSystem)
+                {
+                    name = "System sounds";
+                    key = "system:";
+                }
+                else
+                {
+                    (name, path) = OpenWindows.AppInfo(pid);
+                    if (control.GetDisplayName(out string? display) == 0 && !string.IsNullOrWhiteSpace(display) && !display.StartsWith('@'))
+                        name = display;
+                    key = path ?? "pid:" + pid;
+                }
+
+                bool active = state == 1;
+                if (byApp.TryGetValue(key, out var app))
+                {
+                    app.Add(volume);
+                    app.Active |= active;
+                }
+                else byApp[key] = new AppVolume(name, path, isSystem, active, volume);
+            }
+        }
+        catch { }
+        return byApp.Values
+            .OrderByDescending(a => a.Active).ThenBy(a => a.IsSystem).ThenBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
+    [ComImport, Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IAudioSessionManager2
+    {
+        [PreserveSig] int GetAudioSessionControl(IntPtr groupingParam, int flags, out IntPtr control);
+        [PreserveSig] int GetSimpleAudioVolume(IntPtr groupingParam, int flags, out IntPtr volume);
+        [PreserveSig] int GetSessionEnumerator(out IAudioSessionEnumerator? sessions);
+    }
+
+    [ComImport, Guid("E2F5BB11-0570-40CA-ACDD-3AA01277DEE8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IAudioSessionEnumerator
+    {
+        [PreserveSig] int GetCount(out int count);
+        [PreserveSig] int GetSession(int index, [MarshalAs(UnmanagedType.IUnknown)] out object? session);
+    }
+
+    // Method order must match audiopolicy.h: IAudioSessionControl's nine methods, then IAudioSessionControl2's.
+    [ComImport, Guid("bfb7ff88-7239-4fc9-8fa2-07c950be9c6d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IAudioSessionControl2
+    {
+        [PreserveSig] int GetState(out int state);
+        [PreserveSig] int GetDisplayName([MarshalAs(UnmanagedType.LPWStr)] out string? name);
+        [PreserveSig] int SetDisplayName([MarshalAs(UnmanagedType.LPWStr)] string name, ref Guid context);
+        [PreserveSig] int GetIconPath([MarshalAs(UnmanagedType.LPWStr)] out string? path);
+        [PreserveSig] int SetIconPath([MarshalAs(UnmanagedType.LPWStr)] string path, ref Guid context);
+        [PreserveSig] int GetGroupingParam(out Guid param);
+        [PreserveSig] int SetGroupingParam(ref Guid param, ref Guid context);
+        [PreserveSig] int RegisterAudioSessionNotification(IntPtr client);
+        [PreserveSig] int UnregisterAudioSessionNotification(IntPtr client);
+        [PreserveSig] int GetSessionIdentifier([MarshalAs(UnmanagedType.LPWStr)] out string? id);
+        [PreserveSig] int GetSessionInstanceIdentifier([MarshalAs(UnmanagedType.LPWStr)] out string? id);
+        [PreserveSig] int GetProcessId(out int pid);
+        [PreserveSig] int IsSystemSoundsSession();
+        [PreserveSig] int SetDuckingPreference([MarshalAs(UnmanagedType.Bool)] bool optOut);
+    }
+
+    [ComImport, Guid("87CE5498-68D6-44E5-9215-6DA47EF883D8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    internal interface ISimpleAudioVolume
+    {
+        [PreserveSig] int SetMasterVolume(float level, ref Guid context);
+        [PreserveSig] int GetMasterVolume(out float level);
+        [PreserveSig] int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute, ref Guid context);
+        [PreserveSig] int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
+    }
+
     // ---------- brightness (WMI; built-in laptop panels only) ----------
 
     /// <summary>Sets brightness to an absolute level, or changes it by delta. Returns the new level, or null if unsupported.</summary>

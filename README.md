@@ -28,6 +28,9 @@ Alt + Shift + Space, Ctrl + Shift + Space or Alt + Win + Space, and you can chan
 |---|---|
 | `spot` | Apps, best match first. Apps you open often move up. |
 | `report q3` | Files and folders, from Windows' own search index. |
+| `> report` or `files report` | Only files and folders, with more of them. (`file` on its own still finds File Explorer.) |
+| `chrome`, `budget.xlsx` | Open windows that match, to switch straight to them. |
+| `:fire` or `emoji party` | Emoji, in colour. Enter copies one. |
 | `(12.5 + 7) * 3^2`, `150 + 10%`, `sqrt(2)` | The answer. Enter copies it. |
 | `5 km to mi`, `72 f in c`, `2 acres to perches` | Unit conversions (length, weight, volume, area, speed, time, data, temperature, energy, pressure, power). |
 | `100 usd to lkr`, `€50` | Currency conversions with daily rates. |
@@ -50,7 +53,8 @@ running, and the shortcut is freed up for other apps.
 
 ## Skyline
 
-A menu bar docked to the top of your screen; maximised windows make room for it, just like the taskbar.
+A menu bar docked to the top of every monitor; maximised windows make room for it, just like the taskbar.
+To keep it on your main monitor only, untick **Settings → Skyline → Show on every monitor**.
 
 ![Skyline, left: the Glint button and what's playing on Spotify](docs/screenshots/skyline-left.png)
 
@@ -63,8 +67,8 @@ A menu bar docked to the top of your screen; maximised windows make room for it,
 - **Left:** a Glint button, and what's playing on Spotify: cover, song and a waveform that follows the real
   bass, mids and treble of the music, tinted with the album's colour. Click it for playback controls.
 - **Middle:** date and time. Click for the Windows calendar and notifications.
-- **Right:** network speed (click for data used since your PC started), volume (click for a slider, scroll to
-  adjust), Bluetooth, Wi-Fi and battery (click for Quick Settings), notifications, the optional Claude
+- **Right:** network speed (click for data used since your PC started), volume (click for the main slider and
+  a slider for each app playing sound; click an app's icon to mute it; scroll to adjust), Bluetooth, Wi-Fi and battery (click for Quick Settings), notifications, the optional Claude
   mascot and Glint's settings.
 
 Choose its material (Blur, Acrylic, Mica or Solid) and what it shows in **Settings → Skyline**, or turn it off.

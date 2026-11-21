@@ -17,7 +17,7 @@ public partial class MainWindow : Window
     // Layout constants in device-independent pixels; must match MainWindow.xaml.
     const double PanelMaxH = 600, MarginX = 60, MarginTop = 40, WinH = 730;
     const int HotkeyId = 0x4711;
-    const int MaxApps = 4, MaxFiles = 5, MaxHints = 3;
+    const int MaxApps = 4, MaxFiles = 5, MaxHints = 3, MaxFilesOnly = 12, MaxEmoji = 8, MaxWindows = 3;
 
     readonly ObservableCollection<ResultItem> _results = new();
     IntPtr _hwnd;
@@ -294,6 +294,20 @@ public partial class MainWindow : Window
         string searchText = Commands.SearchText(q); // "open notepad" looks up "notepad"
         Placeholder.Visibility = Query.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
 
+        if (FilesOnly(q, out string fileQuery))
+        {
+            ShowFilesOnly(fileQuery, version);
+            return;
+        }
+        _filesOnlyRows = false;
+
+        if (Emoji.IsEmojiQuery(q, out string emojiQuery))
+        {
+            var emoji = Emoji.Search(emojiQuery, MaxEmoji);
+            SetRows(emoji.Count > 0 ? emoji : new List<ResultItem> { Note($"No emoji match “{emojiQuery}”", "Try a simpler word, like “heart” or “party”", "Emoji") }, 0);
+            return;
+        }
+
         // Everything in this first pass is in-memory, so it lands on the same frame as the keystroke.
         var items = new List<ResultItem>();
         int maxFiles = MaxFiles;
@@ -304,6 +318,17 @@ public partial class MainWindow : Window
             else if (Answers.TryAnswer(q) is { } answer) items.Add(answer);
 
             var apps = AppIndex.Search(searchText, MaxApps);
+            var windows = OpenWindows.Search(searchText, MaxWindows);
+            // An app that's already open: switching to its window comes before starting another copy of it.
+            var appsWithWindows = new List<ResultItem>();
+            foreach (var app in apps)
+            {
+                var open = windows.Where(w => SameProgram(app, w)).ToList();
+                appsWithWindows.AddRange(open);
+                appsWithWindows.Add(app);
+                windows.RemoveAll(open.Contains);
+            }
+            apps = appsWithWindows;
             if (command == null)
             {
                 // Not a full command yet: show what it could become ("set" -> "Set volume to …").
@@ -316,6 +341,7 @@ public partial class MainWindow : Window
             }
             else items.AddRange(apps);
 
+            items.AddRange(windows); // open windows of apps that weren't listed
             items.AddRange(BuiltIns(q));
             items.Add(WebSearch(q));
         }
@@ -350,6 +376,55 @@ public partial class MainWindow : Window
             });
         }
     }
+
+    bool _filesOnlyRows; // the rows on show came from a files-only search
+
+    /// <summary>Whether an open window belongs to this app: the same program, or failing that the same name.</summary>
+    static bool SameProgram(ResultItem app, ResultItem window) =>
+        (app.ProgramPath != null && window.ProgramPath != null &&
+         string.Equals(app.ProgramPath, window.ProgramPath, StringComparison.OrdinalIgnoreCase)) ||
+        string.Equals(app.Title, window.Subtitle, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>"> report" and "files report" search only files and folders. ("file" alone still finds File Explorer.)</summary>
+    static bool FilesOnly(string q, out string rest)
+    {
+        rest = "";
+        if (q.StartsWith('>')) rest = q[1..].Trim();
+        else if (q.Equals("files", StringComparison.OrdinalIgnoreCase)) { }
+        else if (q.StartsWith("files ", StringComparison.OrdinalIgnoreCase)) rest = q[6..].Trim();
+        else return false;
+        return true;
+    }
+
+    void ShowFilesOnly(string query, int version)
+    {
+        if (query.Length == 0)
+        {
+            SetRows(new[] { Note("Search files and folders", "Type a name, for example “files budget” or “> budget”") }, 0);
+            return;
+        }
+        // Keep showing the previous file results while the new ones load, so the list doesn't flicker.
+        if (!_filesOnlyRows) SetRows(new[] { Note("Searching files…", "") }, 0);
+        _filesOnlyRows = true;
+        Task.Run(async () =>
+        {
+            await Task.Delay(60);
+            if (version != _version) return;
+            var files = FileSearch.Search(query, MaxFilesOnly);
+            await Dispatcher.BeginInvoke(() =>
+            {
+                if (version != _version || _parked != null) return;
+                if (files.Count == 0) SetRows(new[] { Note($"No files or folders match “{query}”", "Only places Windows Search indexes are searched") }, 0);
+                else SetRows(files, 0);
+            });
+        });
+    }
+
+    /// <summary>A row that only tells the user something; Enter does nothing on it.</summary>
+    static ResultItem Note(string title, string subtitle, string kind = "Files") =>
+        new() { Title = title, Subtitle = subtitle, Kind = kind, Glyph = kind == "Emoji" ? "" : "" };
+
+    static bool IsNote(ResultItem item) => item.Action == null && item.GetActions == null && item.Completion == null && !item.IsBack;
 
     void SetRows(IReadOnlyList<ResultItem> items, int selectedIndex)
     {
@@ -431,7 +506,9 @@ public partial class MainWindow : Window
     {
         if (ResultsList.SelectedItem is not ResultItem item) { Footer.Text = ""; return; }
 
-        if (InActions)
+        if (IsNote(item))
+            Footer.Text = "";
+        else if (InActions)
             Footer.Text = item.IsBack ? "Enter to go back" : "Enter to choose   ·   Esc to go back";
         else if (item.Completion != null)
             Footer.Text = "Enter to fill in";
@@ -439,10 +516,10 @@ public partial class MainWindow : Window
             Footer.Text = "Enter to continue";
         else if (item.GetActions != null)
             Footer.Text = "Enter to open   ·   Tab for more actions";
-        else if (item.IsAnswer && item.CopyText != null)
+        else if ((item.IsAnswer || item.Kind == "Emoji") && item.CopyText != null)
             Footer.Text = "Enter to copy";
         else
-            Footer.Text = "Enter to " + (item.Kind.StartsWith("Command") ? "run" : "open");
+            Footer.Text = "Enter to " + (item.Kind.StartsWith("Command") ? "run" : item.Kind.StartsWith("Switch") ? "switch" : "open");
     }
 
     // ---------- input ----------
@@ -511,7 +588,7 @@ public partial class MainWindow : Window
 
     void Execute(ResultItem? item, bool secondary)
     {
-        if (item == null) return;
+        if (item == null || IsNote(item)) return;
         if (item.IsBack)
         {
             ExitActions();
