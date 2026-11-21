@@ -47,19 +47,23 @@ internal static class SystemControl
             try
             {
                 var ep = Endpoint();
-                return ep != null && ep.GetMasterVolumeLevelScalar(out float v) == 0 ? (int)Math.Round(v * 100) : null;
+                if (ep != null && ep.GetMasterVolumeLevelScalar(out float v) == 0) return (int)Math.Round(v * 100);
+                ResetAudio(); // stale or missing device: look it up afresh next time
+                return null;
             }
-            catch { return null; }
+            catch { ResetAudio(); return null; }
         }
     }
 
     public static void SetVolume(int percent)
     {
-        var ep = Endpoint();
-        if (ep == null) return;
         Guid ctx = Guid.Empty;
-        ep.SetMasterVolumeLevelScalar(Math.Clamp(percent, 0, 100) / 100f, ref ctx);
-        if (percent > 0) ep.SetMute(false, ref ctx);
+        WithEndpoint(ep =>
+        {
+            int hr = ep.SetMasterVolumeLevelScalar(Math.Clamp(percent, 0, 100) / 100f, ref ctx);
+            if (hr == 0 && percent > 0) ep.SetMute(false, ref ctx);
+            return hr;
+        });
     }
 
     public static bool? Muted
@@ -78,7 +82,26 @@ internal static class SystemControl
     public static void SetMute(bool mute)
     {
         Guid ctx = Guid.Empty;
-        Endpoint()?.SetMute(mute, ref ctx);
+        WithEndpoint(ep => ep.SetMute(mute, ref ctx));
+    }
+
+    /// <summary>
+    /// Runs a volume change on the default device. If the cached endpoint has gone stale (the default output
+    /// changed, or an HDMI/USB device dropped out and came back) it is looked up again and tried once more.
+    /// Never throws: a failed volume change must not take the app down.
+    /// </summary>
+    static void WithEndpoint(Func<IAudioEndpointVolume, int> action)
+    {
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                var ep = Endpoint();
+                if (ep == null || action(ep) == 0) return;
+            }
+            catch { }
+            ResetAudio();
+        }
     }
 
     /// <summary>Friendly name of the default playback device, e.g. "Speakers (Realtek(R) Audio)".</summary>
@@ -136,20 +159,45 @@ internal static class SystemControl
         [PreserveSig] int GetPeakValue(out float peak);
     }
 
-    static IMMDevice? DefaultDevice()
+    // One enumerator per thread, made once. Creating a fresh one on every call (dozens a second while the
+    // slider is dragged) can fail with InvalidCastException while Windows is rebuilding its audio endpoints,
+    // e.g. right after an HDMI monitor with speakers is plugged in or wakes up.
+    [ThreadStatic] static IMMDeviceEnumerator? _enumerator;
+    [ThreadStatic] static IAudioEndpointVolume? _endpoint;
+    [ThreadStatic] static DateTime _endpointAt;
+
+    static void ResetAudio()
     {
-        var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumerator();
-        return enumerator.GetDefaultAudioEndpoint(0 /* render */, 1 /* multimedia */, out var device) == 0 ? device : null;
+        _enumerator = null;
+        _endpoint = null;
     }
 
+    static IMMDevice? DefaultDevice()
+    {
+        try
+        {
+            _enumerator ??= (IMMDeviceEnumerator)new MMDeviceEnumerator();
+            return _enumerator.GetDefaultAudioEndpoint(0 /* render */, 1 /* multimedia */, out var device) == 0 ? device : null;
+        }
+        catch
+        {
+            _enumerator = null;
+            return null;
+        }
+    }
+
+    /// <summary>Volume control of the default device, reused for a second so a slider drag doesn't re-resolve it per tick.</summary>
     static IAudioEndpointVolume? Endpoint()
     {
+        if (_endpoint != null && DateTime.UtcNow - _endpointAt < TimeSpan.FromSeconds(1)) return _endpoint;
+        _endpoint = null;
         var device = DefaultDevice();
         if (device == null) return null;
         Guid iid = typeof(IAudioEndpointVolume).GUID;
-        return device.Activate(ref iid, 23 /* CLSCTX_ALL */, IntPtr.Zero, out object o) == 0
-            ? (IAudioEndpointVolume)o
-            : null;
+        if (device.Activate(ref iid, 23 /* CLSCTX_ALL */, IntPtr.Zero, out object o) != 0 || o is not IAudioEndpointVolume ep)
+            return null;
+        _endpointAt = DateTime.UtcNow;
+        return _endpoint = ep;
     }
 
     [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
