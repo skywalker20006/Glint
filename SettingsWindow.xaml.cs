@@ -13,6 +13,7 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         _main = main;
+        SourceInitialized += (_, _) => DarkMicaTitleBar();
         HotkeyButton.Content = App.HotkeyText();
         CurrencyBox.Text = Settings.HomeCurrency;
         StartupBox.IsChecked = Settings.LaunchAtStartup;
@@ -311,6 +312,21 @@ public partial class SettingsWindow : Window
         ((App)Application.Current).RefreshTopBar();
         ShowStatus("Appearance reset to defaults.");
     }
+
+    /// <summary>
+    /// The window is always dark, so ask Windows for a dark title bar too, made of Mica (the frosted wallpaper
+    /// material Windows 11 uses for its own title bars). Older Windows ignores what it doesn't know.
+    /// </summary>
+    void DarkMicaTitleBar()
+    {
+        IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        int dark = 1, mica = 2 /* DWMSBT_MAINWINDOW */;
+        DwmSetWindowAttribute(hwnd, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, ref dark, sizeof(int));
+        DwmSetWindowAttribute(hwnd, 38 /* DWMWA_SYSTEMBACKDROP_TYPE */, ref mica, sizeof(int));
+    }
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 
     // ---------- version and updates ----------
 
